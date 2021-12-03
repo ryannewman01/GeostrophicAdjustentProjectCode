@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# write commands to output
+set -x
+
+# keep track of where we start
+TOP=$PWD
+
+# clone amrex from github
+git clone https://github.com/AMReX-Codes/amrex.git
+
+# clone IAMR from github
+git clone https://github.com/AMReX-Codes/IAMR.git
+
+# go into amrex and roll back to 21st October 2019
+cd $TOP/amrex
+git checkout `git rev-list -1 --before="Oct 21 2019" development`
+
+# now go and do the same with IAMR
+cd $TOP/IAMR
+git checkout `git rev-list -1 --before="Oct 21 2019" main`
+
+# go back to the top
+cd $TOP
