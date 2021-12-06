@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=r.newman2@ncl.ac.uk
+#SBATCH -t 00:30:00
+#SBATCH -J iamrPP
+#SBATCH --ntasks=32
+
+set -x
+
+module purge
+
+module load GCC/6.3.0-2.27 FFTW/2.1.5-intel-2017.03-GCC-6.3
+
+module list
+
+echo ${SLURM_JOB_NODELIST}
+
+srun AmrDeriveBinaryDump3d.Linux.g++.gfortran.MPI.ex infile= plt00355/ plt00665/ plt00995/ whichVar= {x,y,z}_velocity >& process.out
+

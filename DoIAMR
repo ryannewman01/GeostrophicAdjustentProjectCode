@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=r.newman2@ncl.ac.uk
+#SBATCH -t 04:30:00
+#SBATCH -J iamr
+#SBATCH --ntasks=32
+#SBATCH --error=/mnt/nfs/home/b5035305/scratch/Noslip/rho1_1025_rho3_1030/h1_0.05_h2_0.02_h3_0.23/Omega_0.5237/deltah_0.025/deltax_0.0/error.%A
+#SBATCH --output=/mnt/nfs/home/b5035305/scratch/Noslip/rho1_1025_rho3_1030/h1_0.05_h2_0.02_h3_0.23/Omega_0.5237/deltah_0.025/deltax_0.0/slurm-%A.out
+
+set -x
+
+module list
+
+echo  
+
+srun /mnt/nfs/home/b5035305/scratch/Noslip/rho1_1025_rho3_1030/h1_0.05_h2_0.02_h3_0.23/Omega_0.5237/deltah_0.025/deltax_0.0/amr3d.gnu.MPI.ex /mnt/nfs/home/b5035305/scratch/Noslip/rho1_1025_rho3_1030/h1_0.05_h2_0.02_h3_0.23/Omega_0.5237/deltah_0.025/deltax_0.0/inputs >& outputs

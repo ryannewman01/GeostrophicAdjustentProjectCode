@@ -1,0 +1,8 @@
+
+Currently Loaded Modules:
+  1) GCCcore/6.3.0                 4) icc/2017.4.196-GCC-6.3.0-2.27        7) impi/2017.3.196-iccifort-2017.4.196-GCC-6.3.0-2.27  10) intel/2017.03-GCC-6.3
+  2) binutils/2.27-GCCcore-6.3.0   5) ifort/2017.4.196-GCC-6.3.0-2.27      8) iimpi/2017.03-GCC-6.3.0-2.27                        11) FFTW/2.1.5-intel-2017.03-GCC-6.3
+  3) GCC/6.3.0-2.27                6) iccifort/2017.4.196-GCC-6.3.0-2.27   9) imkl/2017.3.196-iimpi-2017.03-GCC-6.3.0-2.27
+
+ 
+
