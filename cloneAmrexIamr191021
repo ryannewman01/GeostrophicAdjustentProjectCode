@@ -7,10 +7,13 @@ set -x
 TOP=$PWD
 
 # clone amrex from github
-git clone https://github.com/AMReX-Codes/amrex.git
+git clone git@github.com:AMReX-Codes/amrex.git
 
 # clone IAMR from github
-git clone https://github.com/AMReX-Codes/IAMR.git
+git clone git@github.com:AMReX-Codes/IAMR.git
+
+# clone Postprocessing tools from github
+git clone --recurse-submodule git@github.com:AspdenGroup/AmrDerive_Aspden.git
 
 # go into amrex and roll back to 21st October 2019
 cd $TOP/amrex
@@ -19,6 +22,10 @@ git checkout `git rev-list -1 --before="Oct 21 2019" development`
 # now go and do the same with IAMR
 cd $TOP/IAMR
 git checkout `git rev-list -1 --before="Oct 21 2019" main`
+
+# now go into AmrDerive_Aspden and move into the correct branch
+cd $TOP/AmrDerive_Aspden
+git checkout ryan
 
 # go back to the top
 cd $TOP

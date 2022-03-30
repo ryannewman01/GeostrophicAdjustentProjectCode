@@ -25,9 +25,9 @@ Optional Parameters:
 These perameters are set to default values (as shown in brackets) if not defined by the user.
 
 ....Tank set-up....
-rho1: Density of the homogeneous upper fluid layer in kilograms per meter cubed. (1025 kgm^-3)
+rho1: Density of the homogeneous upper fluid layer in kilograms per meter cubed. (1030 kgm^-3)
 rho2: Midpoint density between the two homogeneous fluid layers in kilograms per meter cubed. ([rho1+rho3]/2 kgm^-3)
-rho3: Density of the homogeneous lower fluid layer in kilograms per meter cubed. (1030 kgm^-3)
+rho3: Density of the homogeneous lower fluid layer in kilograms per meter cubed. (1035 kgm^-3)
 h1: Homogeneous upper layer depth in meters. (0.05m)
 h2: Pycnocline width in meters. (0.02m)
 h3: Homogeneous lower layer depth in meters. (0.23m)
@@ -78,7 +78,10 @@ do
 	stop_time)         stop_time=${VALUE};;
 	amr_check_int)     amr_check_int=${VALUE};;
 	amr_plot_int)      amr_plot_int=${VALUE};;
-        *)   
+	kx)                kx=${VALUE};;
+	ky)                ky=${VALUE};;
+	kz)                kz=${VALUE};;
+	*)   
     esac    
 done
 
@@ -122,9 +125,9 @@ else
     exit 1
 fi
 
-if [ -z ${rho1+x} ]; then printf "\n'rho1' is undefined by user. Set to default value 1025\n"; rho1=1025; fi
+if [ -z ${rho1+x} ]; then printf "\n'rho1' is undefined by user. Set to default value 1025\n"; rho1=1030; fi
 
-if [ -z ${rho3+x} ]; then printf "\n'rho3' is undefined by user. Set to default value 1030\n"; rho3=1030; fi
+if [ -z ${rho3+x} ]; then printf "\n'rho3' is undefined by user. Set to default value 1030\n"; rho3=1035; fi
 
 
 if [ -z ${rho2+x} ]; then rho2=$(bc <<<'scale=1; (1025+1030)/2'); printf "\n'rho2' is undefined by the user, it was calculated to be rho2=$rho2\n"; fi
@@ -145,18 +148,24 @@ if [ -z ${stop_time+x} ]; then printf "\n'stop_time' is undefined by user. Set t
 
 if [ -z ${amr_check_int+x} ]; then printf "\n'amr_check_int' is undefined by user. Set to default value 1500\n"; amr_check_int=1500; fi
 
-if [ -z ${amr_plot_int+x} ]; then printf "\n'amr_plot_int' is undefined by user. Set to default value 25\n"; amr_plot_int=25; fi
+if [ -z ${amr_plot_int+x} ]; then printf "\n'amr_plot_int' is undefined by user. Set to default value 10\n"; amr_plot_int=10; fi
+
+if [ -z ${kx+x} ]; then printf "\n'kx' is undefined by user. Set to default value 512\n"; kx=512; fi
+
+if [ -z ${ky+x} ]; then printf "\n'ky' is undefined by user. Set to default value 512\n"; ky=512; fi
+
+if [ -z ${kz+x} ]; then printf "\n'kz' is undefined by user. Set to default value 256\n"; kz=256; fi
 
 ### Define the home directory where the code has been executed and the subsiquent target directory
 HOME=$(pwd)
 target_dir=$HOME/$boundary_type/rho1_${rho1}_rho3_${rho3}/h1_${h1}_h2_${h2}_h3_${h3}/Omega_$omega/deltah_$deltah/deltax_$deltax
 
 ### Check to see if the target directory is pre-existing, if so the code is aborted.
-if [[ -d "$target_dir" ]]
-then 
-    printf "\n***ABORTED*** \nTarget directory already exists, please check you are not trying to override an existing directory. \n${target_dir}\n\n"
-    exit 1
-fi
+#if [[ -d "$target_dir" ]]
+#then 
+#    printf "\n***ABORTED*** \nTarget directory already exists, please check you are not trying to override an existing directory. \n${target_dir}\n\n"
+#    exit 1
+#fi
 
 ### Create the target directory.
 printf "\nCreating Directory: \n$target_dir\n\n"
@@ -164,6 +173,8 @@ mkdir -p $target_dir
 
 ### Generate the probin file
 probin_file_name=probin.3d.Tank.${boundary_type}_Omega_${omega}_delh_${deltah}_delx_${deltax}
+ln -s $target_dir/$probin_file_name $target_dir/probin
+
 
 cat <<EOF > $target_dir/$probin_file_name
 x&fortin
@@ -214,8 +225,8 @@ ns.do_temp_ref = 0
 #*******************************************************************************
 
 # Number of cells in each coordinate direction at the coarsest level
-amr.n_cell 		= 256 256 128
-amr.max_grid_size	= 128
+amr.n_cell 		= $kx $ky $kz
+amr.max_grid_size	= 256
 
 #*******************************************************************************
 
@@ -328,7 +339,7 @@ amr.blocking_factor     = 4
 #*******************************************************************************
 
 # Add vorticity to the variables in the plot files.
-amr.derive_plot_vars    = mag_vort   diveru   avg_pressure
+amr.derive_plot_vars    = mag_vort   diveru   avg_pressure   vort_z
 
 #*******************************************************************************
 ns.do_cons_trac=1
@@ -339,7 +350,7 @@ ns.do_scalminmax=1
 EOF
 
 ### Add symbolic link to the IAMR run3d executable
-ln -s /mnt/nfs/home/b5035305/aja/IAMR/Exec/run3d/amr3d.gnu.MPI.ex $target_dir/amr3d.gnu.MPI.ex
+ln -s /mnt/nfs/home/b5035305/src/ryan211115/iamr-run3d-ryan/amr3d.gnu.MPI.ex $target_dir/amr3d.gnu.MPI.ex
 
 ### Add symbolic link to the inputs and output files
 ln -s $target_dir/$inputs_file_name $target_dir/inputs
@@ -349,13 +360,16 @@ cat <<EOF > $target_dir/DoIAMR
 #!/bin/bash
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=r.newman2@ncl.ac.uk
-#SBATCH -t 04:30:00
+#SBATCH -t 12:30:00
 #SBATCH -J iamr
-#SBATCH --ntasks=32
+#SBATCH --ntasks=64
 #SBATCH --error=$target_dir/error.%A
 #SBATCH --output=$target_dir/slurm-%A.out
 
 set -x
+
+module purge
+module load motif GCC/10.2.0 OpenMPI/4.0.5-GCC-10.2.0 M4 Python/3.8.6-GCCcore-10.2.0 libGLU/9.0.1-GCCcore-10.2.0 CMake/3.18.4-GCCcore-10.2.0 gnuplot
 
 module list
 
@@ -364,11 +378,39 @@ echo \${SLURM_JOB_NODELIST}
 srun $target_dir/amr3d.gnu.MPI.ex $target_dir/inputs >& outputs
 EOF
 
+###Print Input Variables to a file
+cat <<EOF > $target_dir/VariableStore.dat
+$rho1
+$rho2
+$rho3
+$h1
+$h2
+$h3
+$deltah
+$deltax
+$xwidth
+$omega
+$turb_scale
+$boundary_type
+$max_step
+$stop_time
+$amr_check_int
+$amr_plot_int
+$kx
+$ky
+$kz
+EOF
+ 
 ###Copy Palette and source into the target directory
 cp $HOME/Palette $target_dir
 cp /mnt/nfs/home/b5035305/aja/IAMR/Exec/run3d/PROB_3D.F90 $target_dir
 
+###Copy in post processing tools
+ln -s /mnt/nfs/home/b5035305/src/ryan211115/AmrDerive_Aspden/AmrDerive/AmrDeriveAvgPlots3d.Linux.g++.gfortran.MPI.ex $target_dir/AmrDeriveAvgPlots3d.Linux.g++.gfortran.MPI.ex
+ln -s /mnt/nfs/home/b5035305/src/ryan211115/AmrDerive_Aspden/AmrDerive/AmrDeriveBinaryDump3d.Linux.g++.gfortran.MPI.ex $target_dir/AmrDeriveBinaryDump3d.Linux.g++.gfortran.MPI.ex
+ln -s /mnt/nfs/home/b5035305/src/ryan211115/AmrDerive_Aspden/AmrDerive/AmrDeriveGenericKineticEnergy3d.Linux.g++.gfortran.MPI.ex $target_dir/AmrDeriveGenericKineticEnergy3d.Linux.g++.gfortran.MPI.ex
+cp /mnt/nfs/home/b5035305/src/ryan211115/AmrDerive_Aspden/AmrDerive/IAMRPostProcessingKineticEnergy_AveragedFlow_Transport.m $target_dir/IAMRPostProcessingKineticEnergy_AveragedFlow_Transport.m
 ### Send the job
 cd $target_dir
-sbatch DoIAMR
+#sbatch DoIAMR
 cd $HOME
