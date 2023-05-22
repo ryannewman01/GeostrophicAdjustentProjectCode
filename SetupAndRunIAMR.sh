@@ -39,7 +39,7 @@ boundary_type: Defines the properties of the tank wall as either Noslip or Frees
 max_step: Maximum iteration number before IAMR shuts down. (4000)
 step_time: Maximum simulation time IAMR will progress too. (300)
 amr_check_int: Number of iterations between checkpoint files. (1500)
-amr_plot_int: Number of iterations between plotfiles. (25)
+amr_plot_int: Number of iterations between plotfiles. (10)
 
 ------------------------------------------------------------------------------------------------------
 
@@ -130,7 +130,7 @@ if [ -z ${rho1+x} ]; then printf "\n'rho1' is undefined by user. Set to default 
 if [ -z ${rho3+x} ]; then printf "\n'rho3' is undefined by user. Set to default value 1030\n"; rho3=1035; fi
 
 
-if [ -z ${rho2+x} ]; then rho2=$(bc <<<'scale=1; (1025+1030)/2'); printf "\n'rho2' is undefined by the user, it was calculated to be rho2=$rho2\n"; fi
+if [ -z ${rho2+x} ]; then rho2=$(bc <<<'scale=1; (1030+1035)/2'); printf "\n'rho2' is undefined by the user, it was calculated to be rho2=$rho2\n"; fi
 
 if [ -z ${h1+x} ]; then printf "\n'h1' is undefined by user. Set to default value 0.05\n"; h1=0.05; fi
 
@@ -142,9 +142,9 @@ if [ -z ${xwidth+x} ]; then printf "\n'xwidth' is undefined by user. Set to defa
 
 if [ -z ${turb_scale+x} ]; then printf "\n'turb_scale' is undefined by user. Set to default value 1.e-4\n"; turb_scale=1.e-4; fi
 
-if [ -z ${max_step+x} ]; then printf "\n'max_step' is undefined by user. Set to default value 4000\n"; max_step=4000; fi
+if [ -z ${max_step+x} ]; then printf "\n'max_step' is undefined by user. Set to default value 4000\n"; max_step=8000; fi
 
-if [ -z ${stop_time+x} ]; then printf "\n'stop_time' is undefined by user. Set to default value 300.0\n"; stop_time=300.0; fi
+if [ -z ${stop_time+x} ]; then printf "\n'stop_time' is undefined by user. Set to default value 300.0\n"; stop_time=75.0; fi
 
 if [ -z ${amr_check_int+x} ]; then printf "\n'amr_check_int' is undefined by user. Set to default value 1500\n"; amr_check_int=1500; fi
 
@@ -161,11 +161,11 @@ HOME=$(pwd)
 target_dir=$HOME/$boundary_type/rho1_${rho1}_rho3_${rho3}/h1_${h1}_h2_${h2}_h3_${h3}/Omega_$omega/deltah_$deltah/deltax_$deltax
 
 ### Check to see if the target directory is pre-existing, if so the code is aborted.
-#if [[ -d "$target_dir" ]]
-#then 
-#    printf "\n***ABORTED*** \nTarget directory already exists, please check you are not trying to override an existing directory. \n${target_dir}\n\n"
-#    exit 1
-#fi
+if [[ -d "$target_dir" ]]
+then 
+    printf "\n***ABORTED*** \nTarget directory already exists, please check you are not trying to override an existing directory. \n${target_dir}\n\n"
+    exit 1
+fi
 
 ### Create the target directory.
 printf "\nCreating Directory: \n$target_dir\n\n"
@@ -279,7 +279,7 @@ ns.init_shrink          = 0.1  # factor which multiplies the very first time ste
 #*******************************************************************************
 
 # Viscosity coefficient 
-ns.vel_visc_coef        = 0.00089
+ns.vel_visc_coef        = 0.001233
 
 #*******************************************************************************
 
@@ -347,6 +347,8 @@ ns.do_mom_diff=1
 ns.predict_mom_together=1
 ns.do_denminmax=1
 ns.do_scalminmax=1
+ns.velocity_plotfile=/mnt/nfs/home/b5035305/InitCondPlt/
+#ns.velocity_plotfile_scale=0.25
 EOF
 
 ### Add symbolic link to the IAMR run3d executable
@@ -360,11 +362,13 @@ cat <<EOF > $target_dir/DoIAMR
 #!/bin/bash
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=r.newman2@ncl.ac.uk
-#SBATCH -t 12:30:00
+#SBATCH -t 48:00:00
 #SBATCH -J iamr
-#SBATCH --ntasks=64
+#SBATCH --ntasks=128
 #SBATCH --error=$target_dir/error.%A
 #SBATCH --output=$target_dir/slurm-%A.out
+#SBATCH --exclude=sb[053,058,063,071,080,107,108]
+#SBATCH --exclusive
 
 set -x
 
@@ -375,7 +379,7 @@ module list
 
 echo \${SLURM_JOB_NODELIST} 
 
-srun $target_dir/amr3d.gnu.MPI.ex $target_dir/inputs >& outputs
+srun amr3d.gnu.MPI.ex inputs >& outputs
 EOF
 
 ###Print Input Variables to a file
@@ -403,14 +407,14 @@ EOF
  
 ###Copy Palette and source into the target directory
 cp $HOME/Palette $target_dir
-cp /mnt/nfs/home/b5035305/aja/IAMR/Exec/run3d/PROB_3D.F90 $target_dir
+cp /mnt/nfs/home/b5035305/src/ryan211115/iamr-run3d-ryan/PROB_3D.F90 $target_dir
 
 ###Copy in post processing tools
 ln -s /mnt/nfs/home/b5035305/src/ryan211115/AmrDerive_Aspden/AmrDerive/AmrDeriveAvgPlots3d.Linux.g++.gfortran.MPI.ex $target_dir/AmrDeriveAvgPlots3d.Linux.g++.gfortran.MPI.ex
 ln -s /mnt/nfs/home/b5035305/src/ryan211115/AmrDerive_Aspden/AmrDerive/AmrDeriveBinaryDump3d.Linux.g++.gfortran.MPI.ex $target_dir/AmrDeriveBinaryDump3d.Linux.g++.gfortran.MPI.ex
 ln -s /mnt/nfs/home/b5035305/src/ryan211115/AmrDerive_Aspden/AmrDerive/AmrDeriveGenericKineticEnergy3d.Linux.g++.gfortran.MPI.ex $target_dir/AmrDeriveGenericKineticEnergy3d.Linux.g++.gfortran.MPI.ex
-cp /mnt/nfs/home/b5035305/src/ryan211115/AmrDerive_Aspden/AmrDerive/IAMRPostProcessingKineticEnergy_AveragedFlow_Transport.m $target_dir/IAMRPostProcessingKineticEnergy_AveragedFlow_Transport.m
+cp /mnt/nfs/home/b5035305/src/ryan211115/AmrDerive_Aspden/AmrDerive/IAMRPostProcessingComplete240423.m $target_dir/IAMRPostProcessingComplete240423.m
 ### Send the job
 cd $target_dir
-#sbatch DoIAMR
+sbatch DoIAMR
 cd $HOME
