@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=r.newman2@ncl.ac.uk
+#SBATCH -t 48:00:00
+#SBATCH -J iamr
+#SBATCH --ntasks=128
+#SBATCH --error=/mnt/nfs/home/b5035305/scratch/Noslip/rho1_1030_rho3_1035/h1_0.05_h2_0.02_h3_0.23/Omega_0.2618/deltah_0.015/deltax_0.0_kx_1024/error.%A
+#SBATCH --output=/mnt/nfs/home/b5035305/scratch/Noslip/rho1_1030_rho3_1035/h1_0.05_h2_0.02_h3_0.23/Omega_0.2618/deltah_0.015/deltax_0.0_kx_1024/slurm-%A.out
+#SBATCH --exclude=sb[053,058,063,071,080,107,108]
+#SBATCH --exclusive
+
+set -x
+
+module purge
+module load gnuplot/5.4.4-GCCcore-11.3.0 Python/3.10.4-GCCcore-11.3.0 motif/2.3.8-GCCcore-11.3.0 CMake/3.23.1-GCCcore-11.3.0 M4/1.4.19-GCCcore-11.3.0 GCC/11.3.0 OpenMPI/4.1.4-GCC-11.3.0 libGLU/9.0.2-GCCcore-11.3.0
+#module load motif GCC/10.2.0 OpenMPI/4.0.5-GCC-10.2.0 M4 Python/3.8.6-GCCcore-10.2.0 libGLU/9.0.1-GCCcore-10.2.0 CMake/3.18.4-GCCcore-10.2.0 gnuplot
+
+module list
+
+echo ${SLURM_JOB_NODELIST} 
+
+srun amr3d.gnu.MPI.ex inputs amr.restart=`/bin/ls -d1rt chk????? | tail -n 1` >& output.$SLURM_JOBID
